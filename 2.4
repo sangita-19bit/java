@@ -1,0 +1,254 @@
+import java.sql.*;
+import java.util.*;
+
+// ======================== MODEL ========================
+class Student {
+    private int studentID;
+    private String name;
+    private String department;
+    private double marks;
+
+    public Student(int studentID, String name, String department, double marks) {
+        this.studentID = studentID;
+        this.name = name;
+        this.department = department;
+        this.marks = marks;
+    }
+
+    public int getStudentID() { return studentID; }
+    public String getName() { return name; }
+    public String getDepartment() { return department; }
+    public double getMarks() { return marks; }
+
+    public void setMarks(double marks) { this.marks = marks; }
+}
+
+// ======================== CONTROLLER (JDBC OPERATIONS) ========================
+class DatabaseManager {
+    private Connection con;
+
+    public DatabaseManager() throws Exception {
+        Class.forName("com.mysql.cj.jdbc.Driver");
+        con = DriverManager.getConnection("jdbc:mysql://localhost:3306/testdb", "root", "your_password");
+    }
+
+    // ---------- EMPLOYEE TABLE READ ----------
+    public void fetchEmployees() throws SQLException {
+        Statement stmt = con.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT * FROM Employee");
+        System.out.println("\n--- Employee Data ---");
+        System.out.println("EmpID\tName\tSalary");
+        while (rs.next()) {
+            System.out.println(rs.getInt("EmpID") + "\t" + rs.getString("Name") + "\t" + rs.getDouble("Salary"));
+        }
+        rs.close();
+        stmt.close();
+    }
+
+    // ---------- PRODUCT CRUD ----------
+    public void addProduct(int id, String name, double price, int qty) throws SQLException {
+        String sql = "INSERT INTO Product VALUES (?, ?, ?, ?)";
+        PreparedStatement ps = con.prepareStatement(sql);
+        ps.setInt(1, id);
+        ps.setString(2, name);
+        ps.setDouble(3, price);
+        ps.setInt(4, qty);
+        ps.executeUpdate();
+        con.commit();
+        System.out.println("Product Added!");
+    }
+
+    public void viewProducts() throws SQLException {
+        Statement stmt = con.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT * FROM Product");
+        System.out.println("\n--- Product List ---");
+        System.out.println("ID\tName\tPrice\tQuantity");
+        while (rs.next()) {
+            System.out.println(rs.getInt("ProductID") + "\t" + rs.getString("ProductName") + "\t" +
+                               rs.getDouble("Price") + "\t" + rs.getInt("Quantity"));
+        }
+        rs.close();
+        stmt.close();
+    }
+
+    public void updateProduct(int id, double price, int qty) throws SQLException {
+        String sql = "UPDATE Product SET Price=?, Quantity=? WHERE ProductID=?";
+        PreparedStatement ps = con.prepareStatement(sql);
+        ps.setDouble(1, price);
+        ps.setInt(2, qty);
+        ps.setInt(3, id);
+        int rows = ps.executeUpdate();
+        con.commit();
+        System.out.println(rows + " Product(s) Updated.");
+    }
+
+    public void deleteProduct(int id) throws SQLException {
+        String sql = "DELETE FROM Product WHERE ProductID=?";
+        PreparedStatement ps = con.prepareStatement(sql);
+        ps.setInt(1, id);
+        int rows = ps.executeUpdate();
+        con.commit();
+        System.out.println(rows + " Product(s) Deleted.");
+    }
+
+    // ---------- STUDENT CRUD (MVC CONTROLLER) ----------
+    public void addStudent(Student s) throws SQLException {
+        String sql = "INSERT INTO Student VALUES (?, ?, ?, ?)";
+        PreparedStatement ps = con.prepareStatement(sql);
+        ps.setInt(1, s.getStudentID());
+        ps.setString(2, s.getName());
+        ps.setString(3, s.getDepartment());
+        ps.setDouble(4, s.getMarks());
+        ps.executeUpdate();
+        con.commit();
+        System.out.println("Student Added!");
+    }
+
+    public void viewStudents() throws SQLException {
+        Statement stmt = con.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT * FROM Student");
+        System.out.println("\n--- Student Records ---");
+        System.out.println("ID\tName\tDepartment\tMarks");
+        while (rs.next()) {
+            System.out.println(rs.getInt(1) + "\t" + rs.getString(2) + "\t" +
+                               rs.getString(3) + "\t" + rs.getDouble(4));
+        }
+        rs.close();
+        stmt.close();
+    }
+
+    public void updateStudentMarks(int id, double marks) throws SQLException {
+        String sql = "UPDATE Student SET Marks=? WHERE StudentID=?";
+        PreparedStatement ps = con.prepareStatement(sql);
+        ps.setDouble(1, marks);
+        ps.setInt(2, id);
+        int rows = ps.executeUpdate();
+        con.commit();
+        System.out.println(rows + " Student(s) Updated.");
+    }
+
+    public void deleteStudent(int id) throws SQLException {
+        String sql = "DELETE FROM Student WHERE StudentID=?";
+        PreparedStatement ps = con.prepareStatement(sql);
+        ps.setInt(1, id);
+        int rows = ps.executeUpdate();
+        con.commit();
+        System.out.println(rows + " Student(s) Deleted.");
+    }
+
+    public void closeConnection() throws SQLException {
+        if (con != null) con.close();
+    }
+}
+
+// ======================== MAIN (VIEW + MENU) ========================
+public class JDBC_Application {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        try {
+            DatabaseManager db = new DatabaseManager();
+            db.getClass(); // Just to ensure initialization
+            db.getClass().getDeclaredConstructors();
+            db.getClass().getDeclaredMethods();
+
+            Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/testdb", "root", "your_password");
+            con.setAutoCommit(false);
+
+            while (true) {
+                System.out.println("\n==============================");
+                System.out.println("JDBC APPLICATION MENU");
+                System.out.println("==============================");
+                System.out.println("1. View Employees (Part A)");
+                System.out.println("2. Product CRUD (Part B)");
+                System.out.println("3. Student Management (Part C)");
+                System.out.println("4. Exit");
+                System.out.print("Enter choice: ");
+                int ch = sc.nextInt();
+
+                switch (ch) {
+                    case 1:
+                        db.fetchEmployees();
+                        break;
+
+                    case 2:
+                        System.out.println("\n--- PRODUCT MENU ---");
+                        System.out.println("1. Add Product");
+                        System.out.println("2. View Products");
+                        System.out.println("3. Update Product");
+                        System.out.println("4. Delete Product");
+                        System.out.print("Choose: ");
+                        int pc = sc.nextInt();
+                        switch (pc) {
+                            case 1:
+                                System.out.print("Enter ID: "); int pid = sc.nextInt();
+                                System.out.print("Enter Name: "); String pname = sc.next();
+                                System.out.print("Enter Price: "); double price = sc.nextDouble();
+                                System.out.print("Enter Qty: "); int qty = sc.nextInt();
+                                db.addProduct(pid, pname, price, qty);
+                                break;
+                            case 2:
+                                db.viewProducts();
+                                break;
+                            case 3:
+                                System.out.print("Enter Product ID: "); pid = sc.nextInt();
+                                System.out.print("Enter New Price: "); price = sc.nextDouble();
+                                System.out.print("Enter New Qty: "); qty = sc.nextInt();
+                                db.updateProduct(pid, price, qty);
+                                break;
+                            case 4:
+                                System.out.print("Enter Product ID: "); pid = sc.nextInt();
+                                db.deleteProduct(pid);
+                                break;
+                            default:
+                                System.out.println("Invalid choice!");
+                        }
+                        break;
+
+                    case 3:
+                        System.out.println("\n--- STUDENT MENU ---");
+                        System.out.println("1. Add Student");
+                        System.out.println("2. View Students");
+                        System.out.println("3. Update Marks");
+                        System.out.println("4. Delete Student");
+                        System.out.print("Choose: ");
+                        int scOpt = sc.nextInt();
+                        switch (scOpt) {
+                            case 1:
+                                System.out.print("Enter ID: "); int id = sc.nextInt();
+                                System.out.print("Enter Name: "); String name = sc.next();
+                                System.out.print("Enter Dept: "); String dept = sc.next();
+                                System.out.print("Enter Marks: "); double marks = sc.nextDouble();
+                                db.addStudent(new Student(id, name, dept, marks));
+                                break;
+                            case 2:
+                                db.viewStudents();
+                                break;
+                            case 3:
+                                System.out.print("Enter ID: "); id = sc.nextInt();
+                                System.out.print("Enter New Marks: "); marks = sc.nextDouble();
+                                db.updateStudentMarks(id, marks);
+                                break;
+                            case 4:
+                                System.out.print("Enter ID: "); id = sc.nextInt();
+                                db.deleteStudent(id);
+                                break;
+                            default:
+                                System.out.println("Invalid choice!");
+                        }
+                        break;
+
+                    case 4:
+                        db.closeConnection();
+                        System.out.println("Exiting Program...");
+                        sc.close();
+                        return;
+
+                    default:
+                        System.out.println("Invalid choice!");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
