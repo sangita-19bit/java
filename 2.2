@@ -1,0 +1,153 @@
+// AutoboxingExample.java
+import java.util.ArrayList;
+
+public class AutoboxingExample {
+    public static void main(String[] args) {
+        ArrayList<Integer> numbers = new ArrayList<>();
+
+        // Autoboxing: int -> Integer
+        numbers.add(10);
+        numbers.add(20);
+        numbers.add(30);
+
+        int sum = 0;
+
+        // Unboxing: Integer -> int
+        for (Integer num : numbers) {
+            sum += num;
+        }
+
+        System.out.println("Sum of numbers: " + sum);
+    }
+}
+// Student.java
+import java.io.Serializable;
+
+public class Student implements Serializable {
+    private static final long serialVersionUID = 1L;
+    String name;
+    int rollNo;
+
+    public Student(String name, int rollNo) {
+        this.name = name;
+        this.rollNo = rollNo;
+    }
+
+    @Override
+    public String toString() {
+        return "Student{name='" + name + "', rollNo=" + rollNo + "}";
+    }
+}
+// StudentSerialization.java
+import java.io.*;
+
+public class StudentSerialization {
+    public static void main(String[] args) {
+        Student s = new Student("Alice", 101);
+
+        // Serialization
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("student.ser"))) {
+            out.writeObject(s);
+            System.out.println("Student object serialized.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // Deserialization
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream("student.ser"))) {
+            Student s2 = (Student) in.readObject();
+            System.out.println("Deserialized Student: " + s2);
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+}
+// EmployeeManagementSystem.java
+import java.io.*;
+import java.util.Scanner;
+
+class Employee implements Serializable {
+    private static final long serialVersionUID = 1L;
+    int id;
+    String name;
+    double salary;
+
+    Employee(int id, String name, double salary) {
+        this.id = id;
+        this.name = name;
+        this.salary = salary;
+    }
+
+    @Override
+    public String toString() {
+        return "Employee{id=" + id + ", name='" + name + "', salary=" + salary + "}";
+    }
+}
+
+public class EmployeeManagementSystem {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        String fileName = "employees.ser";
+
+        while (true) {
+            System.out.println("\n--- Employee Management System ---");
+            System.out.println("1. Add Employee");
+            System.out.println("2. Show Employees");
+            System.out.println("3. Exit");
+            System.out.print("Enter choice: ");
+            int choice = sc.nextInt();
+            sc.nextLine(); // consume newline
+
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter ID: ");
+                    int id = sc.nextInt();
+                    sc.nextLine();
+                    System.out.print("Enter Name: ");
+                    String name = sc.nextLine();
+                    System.out.print("Enter Salary: ");
+                    double salary = sc.nextDouble();
+
+                    Employee emp = new Employee(id, name, salary);
+
+                    try (ObjectOutputStream out = new ObjectOutputStream(
+                            new FileOutputStream(fileName, true) {
+                                protected void writeStreamHeader() throws IOException {
+                                    if (new File(fileName).length() == 0) {
+                                        super.writeStreamHeader();
+                                    } else {
+                                        reset();
+                                    }
+                                }
+                            })) {
+                        out.writeObject(emp);
+                        System.out.println("Employee added successfully!");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+
+                case 2:
+                    try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(fileName))) {
+                        System.out.println("\n--- Employee List ---");
+                        while (true) {
+                            Employee e = (Employee) in.readObject();
+                            System.out.println(e);
+                        }
+                    } catch (EOFException e) {
+                        // End of file reached
+                    } catch (IOException | ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+
+                case 3:
+                    System.out.println("Exiting...");
+                    System.exit(0);
+
+                default:
+                    System.out.println("Invalid choice!");
+            }
+        }
+    }
+}
